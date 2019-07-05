@@ -49,10 +49,10 @@ def create_tables():
             close MONEY NOT NULL,
             adj_close MONEY NOT NULL,
             volume BIGINT NOT NULL,
-            dividend INTEGER NOT NULL,
-            split INTEGER NOT NULL,
-            logret FLOAT(5) NOT NULL,
-            ret FLOAT(5) NOT NULL
+            dividend FLOAT NOT NULL,
+            split FLOAT NOT NULL,
+            logret FLOAT NOT NULL,
+            ret FLOAT NOT NULL
         )
         """]
     conn = None
@@ -126,6 +126,7 @@ def insert_item_list(tuple_list):
         if conn is not None:
             conn.close()
 
+
 def read_item_list(table_name):
     conn = None
     try:
@@ -160,7 +161,7 @@ def get_csv_df(ticker):
     sp = sp.reindex(columns=cols)
     return sp
 
-def write_to_psql(df, table_name):
+def write_to_psql(df, table_name, if_exists='append'):
     engine = None
     try:
         # read database configuration
@@ -174,7 +175,7 @@ def write_to_psql(df, table_name):
         uri = 'postgres://{}:{}@{}:5432/{}'.format(user, password, host, database)
         engine = create_engine(uri)
 
-        df.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
+        df.to_sql(name=table_name, con=engine, if_exists=if_exists, index=False)
 
     except (Exception, pg.DatabaseError) as error:
         print(error)
@@ -214,7 +215,10 @@ if __name__ == '__main__':
 
     # option 2
     df = get_csv_df('aapl')
-    write_to_psql(df, 'stocks')
+    write_to_psql(df, 'stocks', if_exists='replace')
+    df = get_csv_df('msft')
+    write_to_psql(df, 'stocks', if_exists='append')
+
 
     df = read_from_psql('stocks')
     print(df)
