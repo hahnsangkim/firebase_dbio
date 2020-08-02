@@ -196,6 +196,7 @@ def read_from_psql(table_name):
         # connect to the PostgreSQL database
         uri = 'postgres://{}:{}@{}:5432/{}'.format(user, password, host, database)
         engine = create_engine(uri)
+
         df = pd.read_sql_query('select * from {}'.format(table_name), con=engine)
 
     except (Exception, pg.DatabaseError) as error:
@@ -203,9 +204,52 @@ def read_from_psql(table_name):
     finally:
         return df
 
+
+def read_from_psql_ticker(table_name, ticker):
+    engine = None
+    try:
+        # read database configuration
+        params = config()
+        user = params['user']
+        password = params['password']
+        host = params['host']
+        database = params['database']
+
+        # connect to the PostgreSQL database
+        uri = 'postgres://{}:{}@{}:5432/{}'.format(user, password, host, database)
+        engine = create_engine(uri)
+        df = pd.read_sql_query("select * from {} where ticker = '{}' order by date asc ".format(table_name, ticker.upper()), con=engine)
+
+    except (Exception, pg.DatabaseError) as error:
+        print(error)
+    finally:
+        return df
+
+def drop_duplicates_psql(table_name):
+    engine = None
+    try:
+        # read database configuration
+        params = config()
+        user = params['user']
+        password = params['password']
+        host = params['host']
+        database = params['database']
+
+        # connect to the PostgreSQL database
+        uri = 'postgres://{}:{}@{}:5432/{}'.format(user, password, host, database)
+        engine = create_engine(uri)
+
+        df = pd.read_sql_query('select * from {}'.format(table_name), con=engine)
+        df = df.drop_duplicates()
+
+        df.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
+
+    except (Exception, pg.DatabaseError) as error:
+        print(error)
+
 if __name__ == '__main__':
     # connect()
-    delete_tables()
+    # delete_tables()
     # create_tables()
 
     # read a csv and write it to postresql
@@ -214,12 +258,15 @@ if __name__ == '__main__':
     # insert_item_list(tuple_list)
 
     # option 2
-    df = get_csv_df('aapl')
-    write_to_psql(df, 'stocks', if_exists='replace')
-    df = get_csv_df('msft')
-    write_to_psql(df, 'stocks', if_exists='append')
+    # df = get_csv_df('aapl')
+    # write_to_psql(df, 'stocks')
+    # df = get_csv_df('msft')
+    # write_to_psql(df, 'stocks')
 
 
-    df = read_from_psql('stocks')
+    df = read_from_psql('fred_rgdp')
     print(df)
+    # drop_duplicates_psql('stocks')
+    # df = read_from_psql('stocks')
+    # print(df)
 
